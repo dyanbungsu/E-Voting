@@ -21,16 +21,19 @@
 #osis-app .nav button{flex:1;max-width:220px;padding:10px 14px;border:2px solid var(--biru);background:#fff;color:var(--biru);
   border-radius:10px;font-weight:700;cursor:pointer;font-size:.95rem}
 #osis-app .nav button.on{background:var(--biru);color:#fff}
-#osis-app .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+#osis-app .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:14px}
 #osis-app .card{background:#fff;border:3px solid var(--garis);border-radius:16px;padding:14px;text-align:center;cursor:pointer;
   transition:.15s;position:relative;user-select:none}
 #osis-app .card:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(11,61,145,.15)}
 #osis-app .card.pilih{border-color:var(--hijau);background:#effaf4;box-shadow:0 0 0 4px rgba(19,160,91,.2)}
-#osis-app .foto{width:150px;height:150px;border-radius:50%;margin:4px auto 10px;overflow:hidden;background:#e8eefb;
-  display:flex;align-items:center;justify-content:center;font-size:3.2rem;font-weight:800;color:var(--biru)}
+#osis-app .duo{display:flex;gap:10px;justify-content:center;margin:12px 0 6px}
+#osis-app .org{flex:1;min-width:0;text-align:center}
+#osis-app .foto{width:118px;height:118px;max-width:100%;aspect-ratio:1/1;border-radius:50%;margin:0 auto 6px;overflow:hidden;background:#e8eefb;
+  display:flex;align-items:center;justify-content:center;font-size:2.4rem;font-weight:800;color:var(--biru);border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.15)}
 #osis-app .foto img{width:100%;height:100%;object-fit:cover}
+#osis-app .peran{display:block;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--biru2)}
+#osis-app .org h4{margin:2px 0 0;font-size:.98rem;line-height:1.25;color:#1c2333}
 #osis-app .no{display:inline-block;background:var(--biru);color:#fff;border-radius:999px;padding:2px 14px;font-weight:700;font-size:.85rem}
-#osis-app .card h3{margin:8px 0 2px;font-size:1.1rem;color:#1c2333}
 #osis-app .kls{color:var(--abu);font-size:.88rem}
 #osis-app .visi{margin-top:8px;font-size:.88rem;color:#394258;text-align:left;white-space:pre-line}
 #osis-app .cek{position:absolute;top:10px;right:12px;font-size:1.6rem;display:none;color:var(--hijau)}
@@ -65,7 +68,7 @@
 #osis-app .kecil-teks{color:var(--abu);font-size:.82rem;text-align:center;margin-top:10px}
 #osis-app .aksi-admin{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
 #osis-app [hidden]{display:none!important}
-@media(max-width:520px){#osis-app .foto{width:120px;height:120px}}
+@media(max-width:520px){#osis-app .foto{width:104px;height:104px}}
 </style>
 
 <div class="hd"><h2 id="o-judul">Pemilihan Ketua OSIS</h2><p>SMAN 1 Seunuddon</p></div>
@@ -162,10 +165,15 @@
     var g=$('o-grid'); g.innerHTML='';
     calon.forEach(function(c){
       var el=document.createElement('div'); el.className='card'; el.setAttribute('data-no',c.no);
-      var foto = c.foto ? '<img src="'+esc(c.foto)+'" alt="'+esc(c.nama)+'">' : esc(c.no);
+      function orang(peran,nama,kelas,foto){
+        var f = foto ? '<img src="'+esc(foto)+'" alt="'+esc(nama)+'">' : esc((nama||peran).charAt(0).toUpperCase());
+        return '<div class="org"><div class="foto">'+f+'</div><span class="peran">'+peran+'</span>'+
+          '<h4>'+esc(nama)+'</h4><div class="kls">'+esc(kelas)+'</div></div>';
+      }
       el.innerHTML='<span class="cek">&#10004;</span><span class="no">No. '+esc(c.no)+'</span>'+
-        '<div class="foto" style="margin-top:10px">'+foto+'</div><h3>'+esc(c.nama)+'</h3>'+
-        '<div class="kls">'+esc(c.kelas)+'</div>'+(c.visi?'<div class="visi">'+esc(c.visi)+'</div>':'');
+        '<div class="duo">'+orang('Calon Ketua',c.ketua,c.kelasKetua,c.fotoKetua)+
+        orang('Calon Wakil Ketua',c.wakil,c.kelasWakil,c.fotoWakil)+'</div>'+
+        (c.visi?'<div class="visi">'+esc(c.visi)+'</div>':'');
       el.onclick=function(){ if(sibuk) return; pilih(c.no); };
       g.appendChild(el);
     });
@@ -181,7 +189,7 @@
   }
   function perbaruiAksi(){
     var c=calon.filter(function(x){return x.no===pilihan;})[0];
-    $('o-info').textContent = c ? 'Pilihan Anda: No. '+c.no+' - '+c.nama : 'Klik salah satu calon';
+    $('o-info').textContent = c ? 'Pilihan Anda: No. '+c.no+' - '+c.ketua+(c.wakil?' & '+c.wakil:'') :'Klik salah satu calon';
     $('o-kirim').disabled = !c || sibuk;
   }
 
@@ -216,7 +224,7 @@
     var urut=d.hasil.slice().sort(function(a,b){return b.suara-a.suara;});
     $('o-hasil').innerHTML=urut.map(function(h){
       var unggul = max>0 && h.suara===max;
-      return '<div class="baris'+(unggul?' unggul':'')+'"><div class="t"><span>No. '+esc(h.no)+' - '+esc(h.nama)+
+      return '<div class="baris'+(unggul?' unggul':'')+'"><div class="t"><span>No. '+esc(h.no)+' - '+esc(h.ketua)+(h.wakil?' &amp; '+esc(h.wakil):'')+
         (unggul?'<span class="badge">UNGGUL</span>':'')+'</span><span>'+h.suara+' suara ('+h.persen+'%)</span></div>'+
         '<div class="track"><div class="isi" style="width:'+h.persen+'%"></div></div></div>';
     }).join('') || 'Belum ada data calon.';
