@@ -14,7 +14,10 @@
   font-family:"Segoe UI",Roboto,Arial,sans-serif;color:#1c2333;background:var(--bg);border-radius:16px;
   padding:16px;max-width:1000px;margin:0 auto;box-sizing:border-box;line-height:1.45}
 #osis-app *{box-sizing:border-box}
-#osis-app .hd{background:linear-gradient(135deg,var(--biru),var(--biru2));color:#fff;border-radius:14px;padding:18px 20px;text-align:center}
+#osis-app .hd{background:linear-gradient(135deg,var(--biru),var(--biru2));color:#fff;border-radius:14px;padding:14px 18px;text-align:center;
+  display:flex;align-items:center;justify-content:center;gap:14px}
+#osis-app .hd .jdl{flex:1;min-width:0}
+#osis-app .logo{width:68px;height:68px;flex:none;object-fit:contain;background:#fff;border-radius:50%;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
 #osis-app .hd h2{margin:0;font-size:1.35rem;color:#fff;border:0;padding:0}
 #osis-app .hd p{margin:4px 0 0;opacity:.9;font-size:.92rem}
 #osis-app .nav{display:flex;gap:8px;margin:14px 0;justify-content:center}
@@ -68,10 +71,14 @@
 #osis-app .kecil-teks{color:var(--abu);font-size:.82rem;text-align:center;margin-top:10px}
 #osis-app .aksi-admin{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
 #osis-app [hidden]{display:none!important}
-@media(max-width:520px){#osis-app .foto{width:104px;height:104px}}
+@media(max-width:520px){#osis-app .foto{width:104px;height:104px}#osis-app .logo{width:48px;height:48px}#osis-app .hd{gap:8px;padding:12px}}
 </style>
 
-<div class="hd"><h2 id="o-judul">Pemilihan Ketua OSIS</h2><p>SMAN 1 Seunuddon</p></div>
+<div class="hd">
+  <img id="o-logo1" class="logo" alt="Logo Sekolah" referrerpolicy="no-referrer" hidden>
+  <div class="jdl"><h2 id="o-judul">Pemilihan Ketua OSIS</h2><p>SMAN 1 Seunuddon</p></div>
+  <img id="o-logo2" class="logo" alt="Logo OSIS" referrerpolicy="no-referrer" hidden>
+</div>
 
 <div class="nav">
   <button id="o-tab-vote" class="on">Bilik Suara</button>
@@ -134,11 +141,22 @@
     if(id!=='o-stat'){ clearInterval(timer); timer=null; }
   }
 
+  /* Baca balasan server. Jika bukan JSON, tampilkan judul halaman yang dikirim agar penyebabnya jelas. */
+  function baca(r){
+    return r.text().then(function(t){
+      try{ return JSON.parse(t); }
+      catch(e){
+        var m=t.match(/<title>([^<]*)<\/title>/i);
+        throw new Error('Server mengirim halaman web, bukan data. Judul halaman: "'+(m?m[1].trim():'(tidak ada)')+
+          '". Periksa deployment Apps Script: akses harus "Siapa saja" dan link berakhiran /exec.');
+      }
+    });
+  }
   function post(body){
     return fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)})
-      .then(function(r){ return r.json(); });
+      .then(baca);
   }
-  function get(q){ return fetch(API_URL+'?'+q).then(function(r){ return r.json(); }); }
+  function get(q){ return fetch(API_URL+'?'+q).then(baca); }
 
   /* ---------- BILIK SUARA ---------- */
   function muatCalon(){
@@ -149,6 +167,8 @@
       if(!d.ok) throw new Error(d.error||'Gagal memuat data');
       calon=d.calon; statusNow=d.config.status;
       $('o-judul').textContent=d.config.judul;
+      pasangLogo('o-logo1', d.config.logoSekolah);
+      pasangLogo('o-logo2', d.config.logoOsis);
       if(d.config.status!=='BUKA'){
         $('o-pesan').innerHTML='<div class="pesan tutup">Pemilihan belum dibuka atau sudah ditutup.</div>';
         return;
@@ -170,6 +190,18 @@
               b:'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w600'};
     }
     return {a:u,b:''};
+  }
+
+  /* Pasang logo di header; jika link kosong atau gagal dimuat, logo disembunyikan */
+  function pasangLogo(id,u){
+    var im=$(id), s=fotoSumber(u);
+    if(!s){ im.hidden=true; return; }
+    im.onerror=function(){
+      var b=im.getAttribute('data-b');
+      if(b){ im.removeAttribute('data-b'); im.src=b; } else { im.hidden=true; }
+    };
+    im.setAttribute('data-b',s.b);
+    im.src=s.a; im.hidden=false;
   }
 
   function renderCalon(){
