@@ -119,7 +119,7 @@
 <script>
 (function(){
   /* >>> GANTI dengan URL Web App Apps Script (berakhiran /exec) <<< */
-  var API_URL = "PASTE_URL_WEB_APP_DISINI";
+  var API_URL = "https://script.google.com/macros/s/AKfycbz_PPJqGJMD7Scw9lZyKQVlcSSjDaRWC0FjnTwqkbtZpLYKKkty82TFHh8y3OKADzCl/exec";
 
   var root = document.getElementById('osis-app');
   function $(id){ return root.querySelector('#'+id); }
@@ -161,12 +161,24 @@
     });
   }
 
+  /* Ubah link Google Drive apa pun (link bagikan biasa, link thumbnail) menjadi URL gambar langsung */
+  function fotoSumber(u){
+    u=(u||'').trim(); if(!u) return null;
+    var m=u.match(/\/d\/([\w-]{15,})/)||u.match(/[?&]id=([\w-]{15,})/);
+    if(m && /google\.com|googleusercontent\.com/.test(u)){
+      return {a:'https://lh3.googleusercontent.com/d/'+m[1]+'=w600',
+              b:'https://drive.google.com/thumbnail?id='+m[1]+'&sz=w600'};
+    }
+    return {a:u,b:''};
+  }
+
   function renderCalon(){
     var g=$('o-grid'); g.innerHTML='';
     calon.forEach(function(c){
       var el=document.createElement('div'); el.className='card'; el.setAttribute('data-no',c.no);
       function orang(peran,nama,kelas,foto){
-        var f = foto ? '<img src="'+esc(foto)+'" alt="'+esc(nama)+'">' : esc((nama||peran).charAt(0).toUpperCase());
+        var s=fotoSumber(foto);
+        var f = s ? '<img src="'+esc(s.a)+'" data-b="'+esc(s.b)+'" referrerpolicy="no-referrer" alt="'+esc(nama)+'">' : esc((nama||peran).charAt(0).toUpperCase());
         return '<div class="org"><div class="foto">'+f+'</div><span class="peran">'+peran+'</span>'+
           '<h4>'+esc(nama)+'</h4><div class="kls">'+esc(kelas)+'</div></div>';
       }
@@ -174,6 +186,13 @@
         '<div class="duo">'+orang('Calon Ketua',c.ketua,c.kelasKetua,c.fotoKetua)+
         orang('Calon Wakil Ketua',c.wakil,c.kelasWakil,c.fotoWakil)+'</div>'+
         (c.visi?'<div class="visi">'+esc(c.visi)+'</div>':'');
+      [].forEach.call(el.querySelectorAll('img'),function(im){
+        im.onerror=function(){
+          var b=im.getAttribute('data-b');
+          if(b){ im.removeAttribute('data-b'); im.src=b; }
+          else { im.parentNode.textContent=(im.alt||'?').charAt(0).toUpperCase(); }
+        };
+      });
       el.onclick=function(){ if(sibuk) return; pilih(c.no); };
       g.appendChild(el);
     });
